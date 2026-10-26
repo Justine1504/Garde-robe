@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2f5d62">
 <title>Ma garde-robe</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -94,7 +98,9 @@ const HEAVY=['laine','cuir','velours','doudoune'];
 const GOOD=[['cuir','denim'],['cuir','lin'],['cuir','soie'],['cuir','coton'],['soie','denim'],['velours','laine'],['coton','laine'],['denim','laine'],['coton','denim']];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let db,items=[],hist=[],view='today',W={tmax:15,tmin:8,rain:0,src:''},cur=null,seen=new Set(),pinned=new Set(),occ='any',pend=null;
+let db,items=[],hist=[],view='today',W={tmax:15,tmin:8,rain:0,src:''},cur=null,seen=new Set(),pinned=new Set(),occ='any',pend=null,ip=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e;render()});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 
 /* stockage local (IndexedDB) */
 const req=r=>new Promise((ok,ko)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)});
@@ -217,6 +223,7 @@ function render(){
     const done=hist.find(h=>h.date===today());
     const shown=cur?cur.parts:(done?done.ids.map(id=>items.find(i=>i.id===id)).filter(Boolean):[]);
     a.innerHTML=`<h1>Aujourd’hui</h1><p class="s">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</p>
+    ${ip?'<div class="btns"><button class="p" id="in">Installer l’appli sur l’écran d’accueil</button></div>':''}
     <div class="card meteo"><b>${W.tmax}°</b><span>min <input type="number" id="tn" value="${W.tmin}"> max <input type="number" id="tx" value="${W.tmax}"> pluie <input type="number" id="rn" value="${W.rain}" min="0" max="100">%</span></div>
     <p class="s">Météo : ${esc(W.src||'')}. Tu peux corriger les valeurs.</p>
     <div class="chips">${[['any','Peu importe'],...Object.entries(STY)].map(([k,v])=>`<button class="chip ${occ===k?'on':''}" data-o="${k}">${v}</button>`).join('')}</div>
@@ -230,6 +237,7 @@ function render(){
     ['tn','tx','rn'].forEach(id=>$('#'+id).onchange=()=>{W={tmin:+$('#tn').value,tmax:+$('#tx').value,rain:+$('#rn').value,src:'modifiée à la main'};localStorage.w=JSON.stringify(W);cur=null;seen.clear();render()});
     a.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{occ=b.dataset.o;seen.clear();cur=items.length>=3?gen():null;render()});
     a.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{unpin(b.dataset.u);render()});
+    if($('#in'))$('#in').onclick=async()=>{ip.prompt();await ip.userChoice;ip=null;render()};
     if($('#nx'))$('#nx').onclick=()=>{cur=gen();if(!cur)alert('Il manque un haut + un bas, ou une robe.');render()};
     if($('#ad'))$('#ad').onclick=openPicker;
     if($('#ok'))$('#ok').onclick=async()=>{await put('hist',{date:today(),ids:cur.parts.map(p=>p.id)});cur=null;pinned.clear();seen.clear();await load();render()};
