@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f5d62">
+<title>Ma garde-robe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1ec;--card:#fff;--tx:#1f2a2e;--mu:#5f6f72;--ac:#c4456b;--tl:#2f5d62;--bd:#d9e0da;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#141a1c;--card:#1e282b;--tx:#eaf0ee;--mu:#9bacaf;--ac:#f08aa8;--tl:#7fc0c6;--bd:#2d3b3f;color-scheme:dark}}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--tx);font:400 16px/1.45 'Bricolage Grotesque',system-ui,sans-serif}
+body{padding:env(safe-area-inset-top) 16px calc(84px + env(safe-area-inset-bottom));max-width:560px;margin:auto}
+h1{font-weight:800;font-size:28px;margin:20px 0 4px;letter-spacing:-.5px}
+h2{font-weight:600;font-size:18px;margin:18px 0 8px}
+p.s{color:var(--mu);font-size:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:14px;margin:12px 0}
+.meteo{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.meteo b{font-size:30px;font-weight:800;color:var(--tl)}
+.meteo input{width:58px;padding:6px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{display:flex;flex-direction:column;gap:4px;font-size:12px;position:relative}
+.tile img,.tile .ph{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:1px solid var(--bd)}
+.tile .x{position:absolute;top:4px;right:4px;border:0;background:#000a;color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px}
+.btns{display:flex;gap:8px;margin-top:12px}
+button,.btn{font:600 15px 'Bricolage Grotesque',system-ui,sans-serif;border:0;border-radius:14px;padding:12px 14px;cursor:pointer;flex:1;text-align:center;color:var(--tx);background:var(--bd)}
+button.p{background:var(--ac);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--tl);outline-offset:2px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding:8px 12px calc(8px + env(safe-area-inset-bottom));gap:6px;max-width:560px;margin:auto}
+nav button{background:none;padding:10px 4px;font-size:14px}
+nav button.on{background:var(--tl);color:var(--bg)}
+.note{color:var(--ac);font-size:14px;margin-top:8px}
+dialog{border:0;border-radius:20px;padding:18px;width:min(92vw,420px);background:var(--card);color:var(--tx)}
+dialog::backdrop{background:#0008}
+label{display:block;font-size:14px;color:var(--mu);margin:10px 0 4px}
+dialog input[type=text],select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+.h{display:flex;gap:10px;align-items:center;margin:10px 0}
+.h .d{width:84px;font-size:13px;color:var(--mu)}
+.h .grid{flex:1;grid-template-columns:repeat(4,1fr);gap:4px}
+.empty{color:var(--mu);text-align:center;padding:28px 8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{flex:none;padding:8px 14px;border-radius:999px;font-size:14px}
+.chip.on{background:var(--tl);color:var(--bg)}
+.tile small{color:var(--mu);font-size:11px;margin-top:-3px}
+.tile.pin img,.tile.pin .ph{outline:3px solid var(--ac);outline-offset:-1px}
+.pb{background:none;padding:0;text-align:left;font-weight:400;border-radius:12px;flex:none}
+dialog{max-height:90vh;overflow:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav>
+<button data-v="today" class="on">Aujourd’hui</button>
+<button data-v="wardrobe">Garde-robe</button>
+<button data-v="hist">Semaine</button>
+</nav>
+<dialog id="dlg">
+<form method="dialog" id="f">
+<h2 style="margin-top:0">Ajouter une pièce</h2>
+<label>Photo (la couleur est devinée, tu peux la corriger)</label><input type="file" id="ph" accept="image/*">
+<label>Nom</label><input type="text" id="nm" placeholder="Jean droit brut" required>
+<div class="two">
+<div><label>Type</label><select id="ct"></select></div>
+<div><label>Couleur</label><select id="co"></select></div>
+<div><label>Matière</label><select id="mt"></select></div>
+<div><label>Style</label><select id="sy"></select></div>
+<div><label>Motif</label><select id="pt"></select></div>
+<div><label>Coupe</label><select id="fi"></select></div>
+</div>
+<label>Chaleur</label><select id="ht"><option value="1">Léger (été)</option><option value="2" selected>Moyen (mi-saison)</option><option value="3">Chaud (hiver)</option></select>
+<label><input type="checkbox" id="wp"> Résiste à la pluie</label>
+<div class="btns"><button type="button" id="cn">Annuler</button><button class="p" type="submit">Enregistrer</button></div>
+</form>
+</dialog>
+<dialog id="pk">
+<h2 style="margin-top:0">Ajouter à la tenue</h2>
+<div id="pkc"></div>
+<div class="btns"><button type="button" id="pkx">Fermer</button></div>
+</dialog>
+<script>
+const CATS={haut:'Hauts',pull:'Pulls et gilets',bas:'Bas',robe:'Robes',veste:'Vestes',manteau:'Manteaux',chaussures:'Chaussures',accessoire:'Accessoires'};
+const COLORS=['noir','blanc','gris','beige','marine','denim','marron','kaki','rouge','bordeaux','rose','orange','jaune','vert','bleu','violet','multicolore'];
+const NEUTRAL=['noir','blanc','gris','beige','marine','denim','marron','kaki'];
+const HUE={rouge:0,bordeaux:345,rose:330,orange:25,jaune:50,vert:120,bleu:215,violet:275};
+const DOT={noir:'#222',blanc:'#f4f4f4',gris:'#999',beige:'#d8c3a5',marine:'#1f2f5a',denim:'#4a6fa5',marron:'#7b5338',kaki:'#6b6b3a',rouge:'#c62d3b',bordeaux:'#6d1a2f',rose:'#f09ab8',orange:'#e8812b',vert:'#4c9a5a',bleu:'#2f7be0',jaune:'#f2c94c',violet:'#8c5bc7',multicolore:'linear-gradient(135deg,#e55,#fc4,#4c8,#48e)'};
+const MATS={coton:'Coton',laine:'Laine / maille',denim:'Denim',cuir:'Cuir / simili',soie:'Soie / satin',lin:'Lin',velours:'Velours',sport:'Technique / sport',doudoune:'Doudoune'};
+const STY={casual:'Casual',chic:'Chic',sport:'Sport',soiree:'Soirée'};
+const PATS={uni:'Uni',raye:'Rayé / carreaux',imprime:'Imprimé'};
+const FITS={ajuste:'Ajustée',ample:'Ample'};
+const HEAVY=['laine','cuir','velours','doudoune'];
+const GOOD=[['cuir','denim'],['cuir','lin'],['cuir','soie'],['cuir','coton'],['soie','denim'],['velours','laine'],['coton','laine'],['denim','laine'],['coton','denim']];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let db,items=[],hist=[],view='today',W={tmax:15,tmin:8,rain:0,src:''},cur=null,seen=new Set(),pinned=new Set(),occ='any',pend=null;
+
+/* stockage local (IndexedDB) */
+const req=r=>new Promise((ok,ko)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)});
+const st=(n,m='readonly')=>db.transaction(n,m).objectStore(n);
+const put=(n,v)=>req(st(n,'readwrite').put(v));
+const del=(n,k)=>req(st(n,'readwrite').delete(k));
+async function load(){items=await req(st('items').getAll());hist=(await req(st('hist').getAll())).sort((a,b)=>b.date.localeCompare(a.date))}
+const today=()=>new Date().toLocaleDateString('sv');
+
+/* météo : position du téléphone, sinon Besançon (Open-Meteo, gratuit) */
+async function loadWeather(){
+  let la=47.2378,lo=6.0241,src='Besançon (position non autorisée)';
+  try{
+    const p=await new Promise((ok,ko)=>navigator.geolocation.getCurrentPosition(ok,ko,{timeout:8000}));
+    la=p.coords.latitude;lo=p.coords.longitude;src='ta position';
+  }catch(e){}
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`);
+    const d=(await r.json()).daily;
+    W={tmax:Math.round(d.temperature_2m_max[0]),tmin:Math.round(d.temperature_2m_min[0]),rain:d.precipitation_probability_max[0]||0,src};
+    localStorage.w=JSON.stringify(W);
+  }catch(e){W=JSON.parse(localStorage.w||'null')||W;W.src='dernière météo connue'}
+}
+const feel=()=>W.tmax*.7+W.tmin*.3, wet=()=>W.rain>=50;
+
+/* règles de combinaison */
+function cs(a,b){
+  if(a===b)return 1;
+  if(NEUTRAL.includes(a)||NEUTRAL.includes(b))return 1;
+  if(a==='multicolore'||b==='multicolore')return -3;
+  let d=Math.abs(HUE[a]-HUE[b])%360;if(d>180)d=360-d;
+  return d<=45?1.5:d>=150?1:(d>=105&&d<=135)?0:-1.5;
+}
+const sp=(a,b)=>a===b?1:({'casual,chic':1,'casual,sport':.5,'casual,soiree':-1,'chic,soiree':1,'chic,sport':-3,'soiree,sport':-3})[[a,b].sort().join()]||0;
+function score(o){
+  const t=feel(),hasP=o.some(p=>p.cat==='pull'),base=t<6?3:t<14?2:1;let s=0;
+  const L=o.filter(p=>p.cat!=='accessoire');
+  for(const p of L){
+    if(p.cat==='chaussures'){if(wet())s+=p.wp?3:-2;continue}
+    if(p.cat==='veste'||p.cat==='manteau'){s-=Math.abs(p.heat-(t<6?3:t<12?2:1))*2;if(wet()&&p.wp)s+=3;continue}
+    if(p.cat==='pull'){s-=Math.abs(p.heat-(t<6?3:2))*2;continue}
+    s-=Math.abs(p.heat-(p.cat==='haut'&&hasP?1:base))*2;
+  }
+  /* couleurs : neutres partout, camaïeu, analogues, complémentaires ; 2 couleurs vives max */
+  for(let i=0;i<o.length;i++)for(let j=i+1;j<o.length;j++)s+=cs(o[i].color,o[j].color);
+  const fc=new Set(o.map(p=>p.color).filter(c=>!NEUTRAL.includes(c)));
+  if(fc.size>2)s-=3*(fc.size-2);
+  /* matières : contraste léger/épais, jamais trop d’épais, bonnes paires */
+  const m=o.filter(p=>p.mat),ms=new Set(m.map(p=>p.mat));
+  if(ms.size>=2)s+=1;if(ms.size===3)s+=1;if(ms.size>4)s-=1;
+  let g=0;
+  for(let i=0;i<m.length;i++)for(let j=i+1;j<m.length;j++)if(GOOD.some(([x,y])=>x===m[i].mat&&y===m[j].mat||x===m[j].mat&&y===m[i].mat))g++;
+  s+=Math.min(g,3)*.7;
+  const hv=m.filter(p=>['pull','veste','manteau'].includes(p.cat)&&HEAVY.includes(p.mat));
+  if(t>=8&&hv.length>=2)s-=2;
+  if(hv.length&&m.some(p=>p.cat==='haut'&&['coton','soie','lin'].includes(p.mat)))s+=1;
+  m.forEach(p=>{if(t>=20&&['laine','velours','doudoune'].includes(p.mat))s-=3;if(t<10&&p.mat==='lin')s-=2});
+  /* styles : casual chic ok, sport + chic non, occasion choisie */
+  const sy=L.filter(p=>p.style);
+  for(let i=0;i<sy.length;i++)for(let j=i+1;j<sy.length;j++)s+=sp(sy[i].style,sy[j].style);
+  if(occ!=='any')sy.forEach(p=>s+=p.style===occ?2:sp(p.style,occ)*1.5);
+  /* motifs : un seul à la fois ; coupes : ajusté + ample */
+  const pt=o.filter(p=>p.pat&&p.pat!=='uni').length;if(pt>1)s-=2*(pt-1);
+  const ha=o.find(p=>p.cat==='haut'),ba=o.find(p=>p.cat==='bas');
+  if(ha&&ba&&ha.fit&&ba.fit)s+=ha.fit===ba.fit?(ha.fit==='ample'?-1.5:0):1;
+  return s+Math.random()*2;
+}
+function worn(){
+  const lim=new Date();lim.setDate(lim.getDate()-6);const a=lim.toLocaleDateString('sv'),n=new Set();
+  hist.forEach(h=>{if(h.date>=a&&h.date<today())h.ids.forEach(i=>n.add(i))});return n;
+}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const srt=p=>p.sort((a,b)=>Object.keys(CATS).indexOf(a.cat)-Object.keys(CATS).indexOf(b.cat));
+function gen(relax){
+  const bad=relax?new Set():worn(),t=feel(),pn=c=>items.filter(i=>pinned.has(i.id)&&i.cat===c);
+  const L=c=>pn(c).length?pn(c):items.filter(i=>i.cat===c&&!bad.has(i.id));
+  const H=L('haut'),B=L('bas'),R=L('robe'),P=L('pull'),V=L('veste'),M=L('manteau');
+  const S=pn('chaussures').length?pn('chaussures'):items.filter(i=>i.cat==='chaussures');
+  const pinO=pn('veste').concat(pn('manteau')),needO=t<18||wet();
+  const outer=pinO.length?pinO:!needO?[]:t<8?(M.length?M:V):t<14?V.concat(M):V;
+  const duo=H.length&&B.length,forceR=pn('robe').length>0,forceD=pn('haut').length||pn('bas').length;
+  if(!R.length&&!duo)return relax?null:gen(true);
+  let best=null,bs=-1e9;
+  for(let k=0;k<60;k++){
+    const useR=forceR?true:forceD?!duo:(R.length&&(!duo||Math.random()<.35));
+    const o=useR?[pick(R)]:[pick(H),pick(B)];
+    if((t<13||pn('pull').length)&&P.length)o.push(pick(P));
+    if(outer.length)o.push(pick(outer));
+    if(S.length)o.push(pick(S));
+    items.filter(i=>pinned.has(i.id)&&!o.includes(i)).forEach(i=>o.push(i));
+    if(seen.has(o.map(x=>x.id).sort().join()))continue;
+    const s=score(o);if(s>bs){bs=s;best=o}
+  }
+  if(!best){seen.clear();return gen(relax)}
+  seen.add(best.map(x=>x.id).sort().join());
+  return{parts:srt(best),relax,noV:needO&&!outer.length};
+}
+/* pièces choisies à la main */
+function complete(){
+  let p=cur.parts;
+  if(!p.some(x=>x.cat==='robe'))for(const c of['haut','bas'])if(!p.some(x=>x.cat===c)){
+    const pool=items.filter(i=>i.cat===c),fr=pool.filter(i=>!worn().has(i.id)),cd=fr.length?fr:pool;
+    if(cd.length)p=p.concat([cd.map(x=>[x,score(p.concat([x]))]).sort((a,b)=>b[1]-a[1])[0][0]]);
+  }
+  cur.parts=srt(p);
+}
+function addPin(i){
+  const drop=x=>(i.cat!=='accessoire'&&x.cat===i.cat)||(i.cat==='robe'&&(x.cat==='haut'||x.cat==='bas'))||((i.cat==='haut'||i.cat==='bas')&&x.cat==='robe');
+  cur.parts.filter(drop).forEach(x=>pinned.delete(x.id));
+  cur.parts=srt(cur.parts.filter(x=>!drop(x)).concat([i]));pinned.add(i.id);complete();
+}
+function unpin(id){pinned.delete(id);cur.parts=cur.parts.filter(x=>x.id!==id);complete()}
+
+/* affichage */
+const tile=(i,btn='',cls='')=>`<div class="tile ${cls}">${i.img?`<img src="${i.img}" alt="">`:`<div class="ph" style="background:${DOT[i.color]}"></div>`}<span>${esc(i.name)}</span><small>${[MATS[i.mat],STY[i.style]].filter(Boolean).join(' · ')}</small>${btn}</div>`;
+function render(){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  const a=$('#app');
+  if(view==='today'){
+    const done=hist.find(h=>h.date===today());
+    const shown=cur?cur.parts:(done?done.ids.map(id=>items.find(i=>i.id===id)).filter(Boolean):[]);
+    a.innerHTML=`<h1>Aujourd’hui</h1><p class="s">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</p>
+    <div class="card meteo"><b>${W.tmax}°</b><span>min <input type="number" id="tn" value="${W.tmin}"> max <input type="number" id="tx" value="${W.tmax}"> pluie <input type="number" id="rn" value="${W.rain}" min="0" max="100">%</span></div>
+    <p class="s">Météo : ${esc(W.src||'')}. Tu peux corriger les valeurs.</p>
+    <div class="chips">${[['any','Peu importe'],...Object.entries(STY)].map(([k,v])=>`<button class="chip ${occ===k?'on':''}" data-o="${k}">${v}</button>`).join('')}</div>
+    ${items.length<3?'<div class="empty">Ajoute quelques pièces dans l’onglet Garde-robe pour recevoir des tenues.</div>':
+    shown.length?`<div class="card"><h2 style="margin-top:0">${cur?'Proposition':'Tenue portée aujourd’hui'}</h2><div class="grid">${shown.map(i=>tile(i,pinned.has(i.id)&&cur?`<button class="x" data-u="${i.id}" aria-label="Retirer">×</button>`:'',pinned.has(i.id)?'pin':'')).join('')}</div>
+    ${cur&&cur.relax?'<p class="note">Presque tout a déjà été porté cette semaine : certaines pièces sont reprises.</p>':''}
+    ${cur&&cur.noV?'<p class="note">Il fait frais ou il pleut, mais aucune veste ou aucun manteau n’est disponible.</p>':''}
+    <div class="btns"><button id="nx">Une autre</button>${cur?'<button id="ad">Ajouter une pièce</button>':''}</div>
+    ${cur?'<div class="btns"><button class="p" id="ok">Je la porte</button></div>':''}</div>`
+    :`<div class="card"><div class="btns"><button class="p" id="nx">Proposer une tenue</button></div></div>`}`;
+    ['tn','tx','rn'].forEach(id=>$('#'+id).onchange=()=>{W={tmin:+$('#tn').value,tmax:+$('#tx').value,rain:+$('#rn').value,src:'modifiée à la main'};localStorage.w=JSON.stringify(W);cur=null;seen.clear();render()});
+    a.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{occ=b.dataset.o;seen.clear();cur=items.length>=3?gen():null;render()});
+    a.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{unpin(b.dataset.u);render()});
+    if($('#nx'))$('#nx').onclick=()=>{cur=gen();if(!cur)alert('Il manque un haut + un bas, ou une robe.');render()};
+    if($('#ad'))$('#ad').onclick=openPicker;
+    if($('#ok'))$('#ok').onclick=async()=>{await put('hist',{date:today(),ids:cur.parts.map(p=>p.id)});cur=null;pinned.clear();seen.clear();await load();render()};
+  }
+  if(view==='wardrobe'){
+    a.innerHTML=`<h1>Garde-robe</h1><p class="s">${items.length} pièce${items.length>1?'s':''}</p>
+    <div class="btns"><button class="p" id="add">Ajouter une pièce</button></div>
+    ${Object.keys(CATS).map(c=>{const l=items.filter(i=>i.cat===c);return l.length?`<h2>${CATS[c]}</h2><div class="grid">${l.map(i=>tile(i,`<button class="x" data-d="${i.id}" aria-label="Supprimer">×</button>`)).join('')}</div>`:''}).join('')}
+    <h2>Sauvegarde</h2><div class="btns"><button id="ex">Exporter</button><label class="btn" style="margin:0">Importer<input type="file" id="im" accept=".json" hidden></label></div>
+    <p class="s" style="margin-top:8px">Les données restent sur ce téléphone. Exporte de temps en temps pour garder une copie.</p>`;
+    $('#add').onclick=()=>{$('#f').reset();pend=null;$('#dlg').showModal()};
+    a.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('Supprimer cette pièce ?')){pinned.delete(b.dataset.d);cur=null;await del('items',b.dataset.d);await load();render()}});
+    $('#ex').onclick=()=>{const u=URL.createObjectURL(new Blob([JSON.stringify({items,hist})],{type:'application/json'}));const l=document.createElement('a');l.href=u;l.download='garde-robe.json';l.click()};
+    $('#im').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());for(const i of d.items||[])await put('items',i);for(const h of d.hist||[])await put('hist',h);await load();render()}catch(x){alert('Fichier invalide.')}};
+  }
+  if(view==='hist'){
+    const days=[...Array(7)].map((_,k)=>{const d=new Date();d.setDate(d.getDate()-k);return d.toLocaleDateString('sv')});
+    a.innerHTML=`<h1>Cette semaine</h1><p class="s">Une pièce portée ici ne sera pas reproposée pendant 7 jours.</p>`+days.map(d=>{
+      const h=hist.find(x=>x.date===d),l=h?h.ids.map(id=>items.find(i=>i.id===id)).filter(Boolean):[];
+      return`<div class="card h"><span class="d">${new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}</span>${l.length?`<div class="grid">${l.map(i=>i.img?`<img src="${i.img}" alt="${esc(i.name)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px">`:`<div style="aspect-ratio:1;border-radius:8px;background:${DOT[i.color]}"></div>`).join('')}</div>`:'<span class="s">Rien d’enregistré</span>'}</div>`}).join('');
+  }
+}
+function openPicker(){
+  const inO=new Set(cur.parts.map(p=>p.id)),w=worn();
+  $('#pkc').innerHTML=Object.keys(CATS).map(c=>{const l=items.filter(i=>i.cat===c&&!inO.has(i.id));return l.length?`<h2>${CATS[c]}</h2><div class="grid">${l.map(i=>`<button type="button" class="pb" data-p="${i.id}">${tile(i,w.has(i.id)?'<small>portée récemment</small>':'')}</button>`).join('')}</div>`:''}).join('')||'<p class="empty">Toutes tes pièces sont déjà dans la tenue.</p>';
+  $('#pkc').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{addPin(items.find(i=>i.id===b.dataset.p));$('#pk').close();render()});
+  $('#pk').showModal();
+}
+
+/* ajout d'une pièce : la couleur est devinée depuis la photo (modifiable) */
+function nameColor(r,g,b){
+  r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn,s=d?d/(1-Math.abs(2*l-1)):0;let h=0;
+  if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h=(h*60+360)%360}
+  if(l<.16)return'noir';if(l>.88&&s<.25)return'blanc';if(s<.14)return'gris';
+  if(h<15||h>=345)return l<.3?'bordeaux':'rouge';
+  if(h<42)return s<.38&&l>.55?'beige':l<.4?'marron':'orange';
+  if(h<70)return s<.35&&l>.6?'beige':l<.42?'kaki':'jaune';
+  if(h<165)return l<.4&&s<.5?'kaki':'vert';
+  if(h<255)return l<.27?'marine':(s<.45&&l<.6&&h>190&&h<235?'denim':'bleu');
+  return h<310?'violet':'rose';
+}
+const analyse=f=>new Promise(ok=>{const im=new Image();im.onload=()=>{
+  const r=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*r;c.height=im.height*r;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  const k=document.createElement('canvas');k.width=k.height=12;const x=k.getContext('2d');x.drawImage(c,c.width*.3,c.height*.3,c.width*.4,c.height*.4,0,0,12,12);
+  const d=x.getImageData(0,0,12,12).data;let R=0,G=0,B=0;for(let i=0;i<d.length;i+=4){R+=d[i];G+=d[i+1];B+=d[i+2]}const n=d.length/4;
+  ok({img:c.toDataURL('image/jpeg',.72),color:nameColor(R/n,G/n,B/n)});URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(f)});
+const opts=(o,blank)=>(blank?'<option value="">—</option>':'')+Object.entries(o).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+$('#ct').innerHTML=opts(CATS);$('#mt').innerHTML=opts(MATS,1);$('#sy').innerHTML=opts(STY,1);$('#pt').innerHTML=opts(PATS,1);$('#fi').innerHTML=opts(FITS,1);
+$('#co').innerHTML=COLORS.map(c=>`<option>${c}</option>`).join('');
+$('#cn').onclick=()=>$('#dlg').close();$('#pkx').onclick=()=>$('#pk').close();
+$('#ph').onchange=async e=>{const f=e.target.files[0];pend=f?await analyse(f):null;if(pend)$('#co').value=pend.color};
+$('#f').onsubmit=async()=>{
+  await put('items',{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:$('#nm').value.trim(),cat:$('#ct').value,color:$('#co').value,mat:$('#mt').value,style:$('#sy').value,pat:$('#pt').value,fit:$('#fi').value,heat:+$('#ht').value,wp:$('#wp').checked,img:pend?pend.img:''});
+  pend=null;await load();render();
+};
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;render()});
+
+/* démarrage */
+const o=indexedDB.open('garderobe',1);
+o.onupgradeneeded=e=>{const d=e.target.result;d.createObjectStore('items',{keyPath:'id'});d.createObjectStore('hist',{keyPath:'date'})};
+o.onsuccess=async()=>{db=o.result;await load();render();await loadWeather();render()};
+</script>
+</body>
+</html>
